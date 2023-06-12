@@ -1,0 +1,1 @@
+## This is a pspids version for psp, psx or ps2 games
