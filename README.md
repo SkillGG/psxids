@@ -1,5 +1,5 @@
 ## This is a list of all the psp, psx and ps2 games with coolroms.com.au links
 
-(Previous version for psp only)[https://github.com/SkillGG/pspids]
+[Previous version for psp only](https://github.com/SkillGG/pspids)
 
-(Site available here)[psxid.netlify.app]
+[Site available here](http://psxid.netlify.app)
