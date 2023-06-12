@@ -1,7 +1,7 @@
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
 
-import pspGames from "./assets/psp/games.json";
+import pspGames from "./assets/psp/data.json";
 import { Filter, Game, GamePack } from "./utils";
 
 import FilteredGameTable from "./FilteredGameTable/FGT";
