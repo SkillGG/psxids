@@ -2,15 +2,20 @@ import "./App.css";
 import { useEffect, useRef, useState } from "react";
 
 import pspGames from "./assets/psp/data.json";
+import ps1Games from "./assets/psx/data.json";
+import ps2Games from "./assets/psx2/data.json";
 import { Filter, Game, GamePack } from "./utils";
 
 import FilteredGameTable from "./FilteredGameTable/FGT";
 
 const Games: GamePack = {
     psp: pspGames as Game[],
-    ps2: [],
-    psx: [],
+    ps2: ps2Games as Game[],
+    psx: ps1Games as Game[],
 };
+
+const isGamePackName = (p: string): p is keyof GamePack =>
+    Object.keys(Games)?.includes(p) || false;
 
 function App() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -57,6 +62,22 @@ function App() {
 
     return (
         <>
+            <select
+                onChange={(ev) => {
+                    const gamePack = ev.target.selectedOptions[0].value;
+                    if (isGamePackName(gamePack))
+                        setCurrentGamePack(() => gamePack);
+                }}
+            >
+                {Object.keys(Games).map((packName) => {
+                    return (
+                        <option key={`gp_${packName}`} value={`${packName}`}>
+                            {packName}
+                        </option>
+                    );
+                })}
+            </select>
+            <br />
             <label htmlFor="ntscu">NTSCU</label>
             <input
                 type="checkbox"
@@ -156,7 +177,7 @@ function App() {
                             }
                         );
                         const a = document.createElement("a");
-                        a.download = "games.json";
+                        a.download = "data.json";
                         a.href = URL.createObjectURL(blob);
                         a.click();
                     }}

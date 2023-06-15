@@ -91,6 +91,15 @@ var regions = {
     p: "pal",
     u: "ntscu"
 };
+var verboseMode = function () {
+    var args = process.argv;
+    var vIndex = args.findIndex(function (arg) { return /\-v|\-verbose/.exec(arg); });
+    if (!vIndex)
+        return null;
+    if (vIndex + 1 >= args.length)
+        return null;
+    return args[vIndex + 1];
+};
 var fetchAllDownloadURLs = function (db) { return __awaiter(void 0, void 0, void 0, function () {
     var linkData;
     return __generator(this, function (_a) {
@@ -142,7 +151,7 @@ var fetchDownloadURL = function (db, i) { return __awaiter(void 0, void 0, void 
                     var elem = $(e);
                     var name = elem.text().replace(/\([^\)]+\)/g, "");
                     var href = coolRomBaseURL + elem.attr("href");
-                    var country = elem.parent().attr("class") || "USA";
+                    var country = elem.parent().attr("class") || "---";
                     data.push({ name: name, href: href, country: country });
                 });
                 return [2 /*return*/, data];
@@ -247,32 +256,45 @@ var getDataFromDB = function (db, fromFile) {
         });
     });
 };
-var connectDataWithLinks = function (data, links) {
+var connectDataWithLinks = function (data, links, db) {
     var checkRegion = function (linkCountry, gameRegion, gameLanguage, country, setRegion, setLanguage) {
         return linkCountry === country &&
             gameRegion === setRegion &&
             gameLanguage.includes(setLanguage);
     };
-    // links.reverse();
+    links.reverse();
     var allGames = data.reduce(function (p, n, ix) {
         if (p.find(function (g) { return g.id === n.id; }))
             return p;
-        var lnk = links.find(function (l, il, al) {
+        var lnk = links.find(function (l) {
             var hasSameRegion = countries.reduce(function (p, nc) {
+                if (n.langs.length === 0)
+                    return true;
                 return (p ||
                     checkRegion(l.country, n.region, n.langs, nc[0], nc[1], nc[2]));
             }, false);
-            var hasSameName = n.name
-                .replace(/[^a-z\d]/gi, "")
-                .toLowerCase()
-                .includes(l.name.replace(/[^a-z\d+]/gi, "").toLowerCase());
+            var hasSameName = n.name.replace(/[^a-z\d]/gi, "").toLowerCase() ===
+                l.name.replace(/[^a-z\d+]/gi, "").toLowerCase();
+            var vMode = verboseMode();
+            if (vMode) {
+                var RX = new RegExp(vMode, "i");
+                if (n.name.match(RX) && l.name.match(RX)) {
+                    console.log(l.country, n.langs, n.region, hasSameRegion, n.name.replace(/[^a-z\d]/gi, ""), l.name.replace(/[^a-z\d+]/gi, ""), hasSameName);
+                }
+            }
             return hasSameRegion && hasSameName;
         });
         if (lnk) {
+            lnk.used = true;
             return __spreadArray(__spreadArray([], p, true), [__assign(__assign({}, n), { link: lnk.href })], false);
         }
         return __spreadArray(__spreadArray([], p, true), [n], false);
     }, []);
+    var unused = links.filter(function (l) { return !l.used; });
+    var usedCount = links.length - unused.length;
+    console.log("Links used: ", usedCount, "/", links.length, " ", (usedCount / links.length) * 100, "%");
+    console.log("Saving unused links to " + "./".concat(db, "/gameData.json"));
+    (0, fs_1.writeFileSync)("./".concat(db, "/unusedLinks.json"), JSON.stringify(unused, undefined, 2));
     return allGames;
 };
 var getConnectedDataFromDB = function (db) { return __awaiter(void 0, void 0, void 0, function () {
@@ -282,13 +304,13 @@ var getConnectedDataFromDB = function (db) { return __awaiter(void 0, void 0, vo
             case 0: return [4 /*yield*/, getDataFromDB(db, !1)];
             case 1:
                 _a = _b.sent(), d = _a[0], l = _a[1];
-                return [2 /*return*/, connectDataWithLinks(d, l)];
+                return [2 /*return*/, connectDataWithLinks(d, l, db)];
         }
     });
 }); };
 var writeData = function (db, data) {
     console.log("Got ".concat(data.length, " ").concat(db, " games"));
-    console.log("Got ".concat(data.filter(function (r) { return !!r.link; }).length, " ").concat(db, " games with links"));
+    console.log("Got ", data.filter(function (r) { return !!r.link; }).length, " ".concat(db, " games with links"));
     console.log("Saving to ./".concat(db, "/data.json"));
     (0, fs_1.writeFileSync)("./".concat(db, "/data.json"), JSON.stringify(data), {
         encoding: "utf-8"
@@ -300,6 +322,7 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
         switch (_a.label) {
             case 0:
                 _a.trys.push([0, 6, , 7]);
+                console.log("Verbose mode: ", verboseMode() || "false");
                 console.log("======== PSPortable ========");
                 console.log("============================");
                 console.log("============================");

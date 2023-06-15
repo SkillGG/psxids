@@ -1,6 +1,6 @@
 import { load as cheerioLoad } from "cheerio";
 import { Game, GameRegion } from "../utils";
-import { readFileSync, write, writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 type dbType = "p" | "u" | "j";
 
@@ -8,6 +8,7 @@ type LinkData = {
     href: string;
     name: string;
     country: string;
+    used?: boolean;
 };
 
 const coolRomListURL = "https://coolrom.com.au/roms/";
@@ -51,6 +52,14 @@ const regions: { [key in dbType]: GameRegion } = {
     u: "ntscu",
 };
 
+const verboseMode = (): string | null => {
+    const { argv: args } = process;
+    const vIndex = args.findIndex((arg) => /\-v|\-verbose/.exec(arg));
+    if (!vIndex) return null;
+    if (vIndex + 1 >= args.length) return null;
+    return args[vIndex + 1];
+};
+
 const fetchAllDownloadURLs = async (db: keyof typeof dbURLs) => {
     const linkData: LinkData[] = [];
 
@@ -86,7 +95,7 @@ const fetchDownloadURL = async (db: keyof typeof dbURLs, i: number) => {
 
             const href = coolRomBaseURL + elem.attr("href");
 
-            const country = elem.parent().attr("class") || "USA";
+            const country = elem.parent().attr("class") || "---";
 
             data.push({ name, href, country });
         });
@@ -180,7 +189,11 @@ const getDataFromDB = async (
     return [data, linkData];
 };
 
-const connectDataWithLinks = (data: Game[], links: LinkData[]): Game[] => {
+const connectDataWithLinks = (
+    data: Game[],
+    links: LinkData[],
+    db: keyof typeof dbURLs
+): Game[] => {
     const checkRegion = (
         linkCountry: string,
         gameRegion: string,
@@ -193,12 +206,13 @@ const connectDataWithLinks = (data: Game[], links: LinkData[]): Game[] => {
         gameRegion === setRegion &&
         gameLanguage.includes(setLanguage);
 
-    // links.reverse();
+    links.reverse();
 
     const allGames = data.reduce<Game[]>((p, n, ix) => {
         if (p.find((g) => g.id === n.id)) return p;
-        const lnk = links.find((l, il, al) => {
+        const lnk = links.find((l) => {
             const hasSameRegion = countries.reduce((p, nc) => {
+                if (n.langs.length === 0) return true;
                 return (
                     p ||
                     checkRegion(
@@ -211,29 +225,62 @@ const connectDataWithLinks = (data: Game[], links: LinkData[]): Game[] => {
                     )
                 );
             }, false);
-            const hasSameName = n.name
-                .replace(/[^a-z\d]/gi, "")
-                .toLowerCase()
-                .includes(l.name.replace(/[^a-z\d+]/gi, "").toLowerCase());
+            const hasSameName =
+                n.name.replace(/[^a-z\d]/gi, "").toLowerCase() ===
+                l.name.replace(/[^a-z\d+]/gi, "").toLowerCase();
+            const vMode = verboseMode();
+            if (vMode) {
+                const RX = new RegExp(vMode, "i");
+                if (n.name.match(RX) && l.name.match(RX)) {
+                    console.log(
+                        l.country,
+                        n.langs,
+                        n.region,
+                        hasSameRegion,
+                        n.name.replace(/[^a-z\d]/gi, ""),
+                        l.name.replace(/[^a-z\d+]/gi, ""),
+                        hasSameName
+                    );
+                }
+            }
             return hasSameRegion && hasSameName;
         });
         if (lnk) {
+            lnk.used = true;
             return [...p, { ...n, link: lnk.href }];
         }
         return [...p, n];
     }, []);
+    const unused = links.filter((l) => !l.used);
+    const usedCount = links.length - unused.length;
+    console.log(
+        `Links used: `,
+        usedCount,
+        `/`,
+        links.length,
+        " ",
+        (usedCount / links.length) * 100,
+        `%`
+    );
+    console.log("Saving unused links to " + `./${db}/gameData.json`);
+    writeFileSync(
+        `./${db}/unusedLinks.json`,
+        JSON.stringify(unused, undefined, 2)
+    );
     return allGames;
 };
 
 const getConnectedDataFromDB = async (db: keyof typeof dbURLs) => {
     const [d, l] = await getDataFromDB(db, !1);
-    return connectDataWithLinks(d, l);
+    return connectDataWithLinks(d, l, db);
 };
 
 const writeData = (db: keyof typeof dbURLs, data: Game[]) => {
     console.log(`Got ${data.length} ${db} games`);
     console.log(
-        `Got ${data.filter((r) => !!r.link).length} ${db} games with links`
+        `Got `,
+        data.filter((r) => !!r.link).length,
+        ` ${db} games with links`
     );
     console.log(`Saving to ./${db}/data.json`);
     writeFileSync(`./${db}/data.json`, JSON.stringify(data), {
@@ -243,6 +290,7 @@ const writeData = (db: keyof typeof dbURLs, data: Game[]) => {
 
 const main = async () => {
     try {
+        console.log("Verbose mode: ", verboseMode() || "false");
         console.log("======== PSPortable ========");
         console.log("============================");
         console.log("============================");
