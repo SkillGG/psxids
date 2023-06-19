@@ -121,7 +121,6 @@ function App() {
                 <textarea
                     name=""
                     id=""
-                    cols={30}
                     rows={10}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.currentTarget.value)}

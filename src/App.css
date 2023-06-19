@@ -24,7 +24,7 @@ table tbody tr:nth-child(2n) {
 }
 table tbody tr:hover {
   background-color: darkred;
-  color: white;
+  color: white; 
 }
 table tbody tr:hover a {
   color: navajowhite;
