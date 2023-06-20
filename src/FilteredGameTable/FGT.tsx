@@ -23,8 +23,9 @@ const GameTable: FC<GameTableProps> = ({
     const editRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        console.log("Number of entries changed");
         setFoundCount((p) => tbodyRef.current?.childElementCount || p);
-    }, [tbodyRef.current?.childElementCount]);
+    }, [tbodyRef.current?.childElementCount, search, games]);
 
     return (
         <>

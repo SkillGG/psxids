@@ -1,52 +1,65 @@
+#root {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr 8fr;
+}
+@media only screen and (max-width: 900px) {
+    #root {
+        grid-auto-flow: row;
+        grid-auto-columns: 1fr;
+    }
+    .filterCheckbox {
+        margin: 0 auto;
+    }
+    .filterCheckboxes {
+        display: flex;
+        flex-direction: row;
+        margin-inline: 10%;
+    }
+}
 .tx {
-  float: left;
-  width: 25%;
-  padding: 0;
-  margin: 0;
+    padding: 0;
+    margin: 0;
 }
 .editbtn {
-  border: none;
-  background-color: #fcfa;
-  float: right;
+    border: none;
+    background-color: #fcfa;
+    float: right;
 }
 pre {
-  margin: 0;
-  padding-top: 0;
+    margin: 0;
+    padding-top: 0;
 }
 table thead {
-  background-color: rgba(255, 202, 210, 0.932);
+    background-color: rgba(255, 202, 210, 0.932);
 }
 table tbody tr {
-  background-color: #fef;
+    background-color: #fef;
 }
 table tbody tr:nth-child(2n) {
-  background-color: #f9ca;
+    background-color: #f9ca;
 }
 table tbody tr:hover {
-  background-color: darkred;
-  color: white; 
+    background-color: darkred;
+    color: white;
 }
 table tbody tr:hover a {
-  color: navajowhite;
+    color: navajowhite;
 }
 textarea {
-  width: 90%;
-  margin: 0 auto;
-  display: block;
+    width: 90%;
+    margin: 0 auto;
+    display: block;
 }
 table {
-  float: left;
-  border-collapse: collapse;
-  border: 1px solid black;
-  width: 70%;
+    border-collapse: collapse;
+    border: 1px solid black;
+    margin-inline: 10px;
 }
 table thead tr th:nth-child(2),
 table thead tr th:last-child {
-  width: 5%;
+    width: 5%;
 }
 table td {
-  border: 1px solid black;
-}
-br {
-  clear: both;
+    border: 1px solid black;
 }
